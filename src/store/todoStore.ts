@@ -3,6 +3,11 @@ import { defineStore } from 'pinia';
 import { debounce } from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
 
+import {
+  loadTasksFromLocalStorage,
+  saveTasksToLocalStorage,
+} from '../utils/storage';
+
 export interface Task {
   id: string;
   text: string;
@@ -10,7 +15,7 @@ export interface Task {
 }
 
 export const useTodoStore = defineStore('todo', () => {
-  const tasks = ref<Task[]>(JSON.parse(localStorage.getItem('tasks') || '[]'));
+  const tasks = ref<Task[]>(loadTasksFromLocalStorage());
 
   const newTaskText = ref('');
   const newTaskError = ref(false);
@@ -54,7 +59,7 @@ export const useTodoStore = defineStore('todo', () => {
   const saveEditTask = () => {
     const trimmedText = editTaskText.value.trim();
 
-    if (!trimmedText || !editTaskIndex.value) {
+    if (!trimmedText || editTaskIndex.value === null) {
       editTaskError.value = true;
       return;
     }
@@ -88,14 +93,14 @@ export const useTodoStore = defineStore('todo', () => {
     task.completed = !task.completed;
   };
 
-  const saveTasksToLocalStorage = debounce(() => {
-    localStorage.setItem('tasks', JSON.stringify(tasks.value));
+  const saveTasksToLocalStorageDebounced = debounce(() => {
+    saveTasksToLocalStorage(tasks.value);
   }, 500);
 
   watch(
     tasks,
     () => {
-      saveTasksToLocalStorage();
+      saveTasksToLocalStorageDebounced();
     },
     { deep: true }
   );
