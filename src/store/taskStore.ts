@@ -1,4 +1,4 @@
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { defineStore } from 'pinia';
 import { v4 as uuidv4 } from 'uuid';
 import { debounce } from 'lodash';
@@ -9,6 +9,7 @@ import {
 } from '../utils/storage';
 
 import { useErrorStore } from './errorStore';
+import { useFilterStore } from './filterStore';
 
 export interface Task {
   id: string;
@@ -18,6 +19,7 @@ export interface Task {
 
 export const useTaskStore = defineStore('task', () => {
   const errorStore = useErrorStore();
+  const filterStore = useFilterStore();
 
   const tasks = ref<Task[]>(loadTasksFromLocalStorage());
 
@@ -25,6 +27,19 @@ export const useTaskStore = defineStore('task', () => {
 
   const editTaskIndex = ref<number | null>(null);
   const editTaskText = ref('');
+
+  const filteredTasks = computed(() => {
+    const filter = filterStore.filter;
+
+    switch (filter) {
+      case 'completed':
+        return tasks.value.filter((task) => task.completed);
+      case 'incomplete':
+        return tasks.value.filter((task) => !task.completed);
+    }
+
+    return tasks.value;
+  });
 
   const addTask = () => {
     const trimmedText = newTaskText.value.trim();
@@ -90,7 +105,7 @@ export const useTaskStore = defineStore('task', () => {
   watch(tasks, saveTasksToLocalStorageDebounced, { deep: true });
 
   return {
-    tasks,
+    tasks: filteredTasks,
     newTaskText,
     editTaskIndex,
     editTaskText,
