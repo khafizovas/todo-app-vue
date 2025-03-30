@@ -124,12 +124,13 @@ watch(
           Введите задачу перед изменением
         </p>
 
-        <button
-          v-else
-          @click="deleteTask(index)"
-          class="ml-2 text-red-500 cursor-pointer">
-          x
-        </button>
+        <div v-else class="w-full md:flex justify-end items-center">
+          <button
+            @click="deleteTask(index)"
+            class="w-6 h-6 text-red-500 cursor-pointer">
+            x
+          </button>
+        </div>
       </li>
     </ul>
   </div>
