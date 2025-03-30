@@ -1,12 +1,14 @@
 import { ref, watch } from 'vue';
 import { defineStore } from 'pinia';
-import { debounce } from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
+import { debounce } from 'lodash';
 
 import {
   loadTasksFromLocalStorage,
   saveTasksToLocalStorage,
 } from '../utils/storage';
+
+import { useErrorStore } from './errorStore';
 
 export interface Task {
   id: string;
@@ -14,70 +16,32 @@ export interface Task {
   completed: boolean;
 }
 
-export const useTodoStore = defineStore('todo', () => {
+export const useTaskStore = defineStore('task', () => {
+  const errorStore = useErrorStore();
+
   const tasks = ref<Task[]>(loadTasksFromLocalStorage());
 
   const newTaskText = ref('');
-  const newTaskError = ref(false);
 
   const editTaskIndex = ref<number | null>(null);
   const editTaskText = ref('');
-  const editTaskError = ref(false);
 
   const addTask = () => {
-    if (!newTaskText.value.trim()) {
-      newTaskError.value = true;
+    const trimmedText = newTaskText.value.trim();
+
+    if (!trimmedText) {
+      errorStore.setAddTaskError(true);
       return;
     }
 
-    resetAddTaskError();
-
     const newTask: Task = {
       id: uuidv4(),
-      text: newTaskText.value.trim(),
+      text: trimmedText,
       completed: false,
     };
 
     tasks.value.push(newTask);
     newTaskText.value = '';
-  };
-
-  const resetAddTaskError = () => {
-    newTaskError.value = false;
-  };
-
-  const startEditTask = (id: string) => {
-    const task = tasks.value.find((task) => task.id === id);
-    if (!task) {
-      return;
-    }
-
-    editTaskIndex.value = tasks.value.indexOf(task);
-    editTaskText.value = task.text;
-  };
-
-  const saveEditTask = () => {
-    const trimmedText = editTaskText.value.trim();
-
-    if (!trimmedText || editTaskIndex.value === null) {
-      editTaskError.value = true;
-      return;
-    }
-
-    tasks.value[editTaskIndex.value].text = trimmedText;
-    editTaskIndex.value = null;
-
-    resetEditTaskError();
-  };
-
-  const cancelEditTask = () => {
-    editTaskIndex.value = null;
-    editTaskText.value = '';
-    editTaskError.value = false;
-  };
-
-  const resetEditTaskError = () => {
-    editTaskError.value = false;
   };
 
   const deleteTask = (id: string) => {
@@ -86,39 +50,55 @@ export const useTodoStore = defineStore('todo', () => {
 
   const toggleTask = (id: string) => {
     const task = tasks.value.find((task) => task.id === id);
-    if (!task) {
+    if (task) {
+      task.completed = !task.completed;
+    }
+  };
+
+  const startEditTask = (id: string) => {
+    const task = tasks.value.find((task) => task.id === id);
+    if (!task) return;
+
+    editTaskIndex.value = tasks.value.indexOf(task);
+    editTaskText.value = task.text;
+  };
+
+  const saveEditTask = () => {
+    const trimmedText = editTaskText.value.trim();
+    if (!trimmedText || editTaskIndex.value === null) {
+      errorStore.setEditTaskError(true);
       return;
     }
 
-    task.completed = !task.completed;
+    tasks.value[editTaskIndex.value].text = trimmedText;
+    resetEditState();
+  };
+
+  const cancelEditTask = () => {
+    resetEditState();
+  };
+
+  const resetEditState = () => {
+    editTaskIndex.value = null;
+    editTaskText.value = '';
   };
 
   const saveTasksToLocalStorageDebounced = debounce(() => {
     saveTasksToLocalStorage(tasks.value);
   }, 500);
 
-  watch(
-    tasks,
-    () => {
-      saveTasksToLocalStorageDebounced();
-    },
-    { deep: true }
-  );
+  watch(tasks, saveTasksToLocalStorageDebounced, { deep: true });
 
   return {
     tasks,
     newTaskText,
-    newTaskError,
     editTaskIndex,
     editTaskText,
-    editTaskError,
     addTask,
-    resetAddTaskError,
+    deleteTask,
+    toggleTask,
     startEditTask,
     saveEditTask,
     cancelEditTask,
-    resetEditTaskError,
-    deleteTask,
-    toggleTask,
   };
 });

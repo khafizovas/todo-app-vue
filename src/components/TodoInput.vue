@@ -2,18 +2,22 @@
 import { computed } from 'vue';
 import { storeToRefs } from 'pinia';
 
-import { useTodoStore } from '../store/todoStore';
+import { useTaskStore } from '../store/taskStore';
+import { useErrorStore } from '../store/errorStore';
 
-const store = useTodoStore();
-const { newTaskText, newTaskError } = storeToRefs(store);
+const taskStore = useTaskStore();
+const errorStore = useErrorStore();
+
+const { newTaskText } = storeToRefs(taskStore);
+const { addTaskError } = storeToRefs(errorStore);
 
 const borderClass = computed(() =>
-  newTaskError.value ? 'border-red-500' : 'border-black'
+  addTaskError.value ? 'border-red-500' : 'border-black'
 );
 
 const handleAddTask = (event: Event) => {
   event.preventDefault();
-  store.addTask();
+  taskStore.addTask();
 };
 </script>
 
@@ -21,7 +25,7 @@ const handleAddTask = (event: Event) => {
   <form @submit="handleAddTask" class="flex">
     <input
       v-model="newTaskText"
-      @focus="store.resetAddTaskError"
+      @focus="errorStore.resetAddTaskError"
       placeholder="Добавить задачу..."
       id="new-task"
       class="flex-1 p-3 bg-white text-black border-2 rounded-l-xl focus:outline-none"
@@ -35,7 +39,7 @@ const handleAddTask = (event: Event) => {
     </button>
   </form>
 
-  <p v-if="newTaskError" class="text-red-500 text-sm mt-1">
+  <p v-if="addTaskError" class="text-red-500 text-sm mt-1">
     Введите задачу перед добавлением
   </p>
 </template>

@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { useTodoStore } from '../store/todoStore';
+import { useTaskStore } from '../store/taskStore';
 
 import TodoInput from './TodoInput.vue';
 import TodoItem from './TodoItem.vue';
 
-const store = useTodoStore();
+const taskStore = useTaskStore();
 </script>
 
 <template>
@@ -18,10 +18,10 @@ const store = useTodoStore();
 
     <ul class="mt-6">
       <TodoItem
-        v-for="task in store.tasks"
+        v-for="task in taskStore.tasks"
         :key="task.text"
         :task="task"
-        :index="store.tasks.indexOf(task)" />
+        :index="taskStore.tasks.indexOf(task)" />
     </ul>
   </div>
 </template>
